@@ -26,5 +26,6 @@ for i in range(len(otimizado)):
 print(nao_otimizado_y)
 print(otimizado_y)
 
-plt.hist(x=[1,2,3])
+plt.bar(x=[1,2,3], height=[1,2,3])
+plt.xticks([1,2,3], ['a','b','c'])
 plt.show()
