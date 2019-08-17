@@ -1,0 +1,22 @@
+gcc -O0 example1.c -o exemplo1_o0
+gcc -O0 example2.c -o exemplo2_o0
+gcc -O0 example3.c -o exemplo3_o0
+gcc -O0 example4.c -o exemplo4_o0
+
+
+gcc -O3 example1.c -o exemplo1_o3
+gcc -O3 example2.c -o exemplo2_o3
+gcc -O3 example3.c -o exemplo3_o3
+gcc -O3 example4.c -o exemplo4_o3
+
+
+objdump -D exemplo1_o0 > exemplo1_o0.dump
+objdump -D exemplo2_o0 > exemplo2_o0.dump
+objdump -D exemplo3_o0 > exemplo3_o0.dump
+objdump -D exemplo4_o0 > exemplo4_o0.dump
+
+
+objdump -D exemplo1_o3 > exemplo1_o3.dump
+objdump -D exemplo2_o3 > exemplo2_o3.dump
+objdump -D exemplo3_o3 > exemplo3_o3.dump
+objdump -D exemplo4_o3 > exemplo4_o3.dump
