@@ -22,9 +22,7 @@ T_VOID void
 T_CLOSE_P )
 T_OPEN_K {
 T_RETURN return
-T_NUM 9
-T_DOT .
-T_NUM 46
+T_NUM 9.46
 T_SEMI_COLON ;
 T_CLOSE_K }
 T_CHAR char

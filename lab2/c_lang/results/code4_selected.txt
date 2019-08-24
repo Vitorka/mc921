@@ -4,8 +4,7 @@ T_ID a
 T_NUM '5'
 T_NUM 56
 T_ID banana
-T_NUM 9
-T_NUM 46
+T_NUM 9.46
 T_ID str
 T_STR "STRING"
 T_ID main

@@ -7,8 +7,7 @@ T_ID b
 T_ID c
 T_ID b
 T_ID b
-T_NUM 4
-T_NUM 0
+T_NUM 4.0
 T_ID a
 T_ID c
 T_ID bhaskara_plus
@@ -31,8 +30,7 @@ T_ID sqrt
 T_ID a
 T_ID b
 T_ID c
-T_NUM 2
-T_NUM 0
+T_NUM 2.0
 T_ID a
 T_ID swapNext
 T_ID array
@@ -46,8 +44,7 @@ T_NUM 0
 T_ID array
 T_NUM 0
 T_ID next
-T_NUM 47
-T_NUM 991
+T_NUM 47.991
 T_ID buble_sort_
 T_ID array
 T_ID unsigned
