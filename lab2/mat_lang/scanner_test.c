@@ -20,6 +20,8 @@ int main() {
         code = yylex();
         switch(code) {
             case T_ID:
+                printf("%s %s\n", token_str[code], yytext);
+                break;
                 /* FALLTROUGH */
             case T_NUMBER:
                 printf("%s %s\n", token_str[code], yytext);

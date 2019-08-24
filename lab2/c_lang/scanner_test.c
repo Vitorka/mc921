@@ -20,15 +20,19 @@ int main() {
         code = yylex();
         switch(code) {
             case T_ID:
-                /* FALLTROUGH */
-            case T_NUMBER:
-                printf("%s %s\n", token_str[code], yytext);
+                printf("%s %s\n", token_name[code], yytext);
+                break;
+            case T_NUM:
+                printf("%s %s\n", token_name[code], yytext);
+                break;
+            case T_STR:
+                printf("%s %s\n", token_name[code], yytext);
                 break;
             case T_ERROR:
                 printf("T_ERROR\n");
                 exit(1);
             default:
-                printf("%s\n", token_str[code]);
+                printf("%s %s\n", token_name[code], yytext);
                 break;
         }
     } while (code != T_EOF);
