@@ -16,6 +16,6 @@ sed -e "s/INT\>\|CHAR\>\|FLOAT\>\|LONG\>\|VOID\>\|ENUM\>\|STRUCT\>\|UNION\>\|TYP
 rm tmp_code_sed.c
 
 
-# flex -i -o scanner.c scanner.l
-# gcc -g -o scanner_test scanner_test.c scanner.c
-# ./scanner_test < $1
+flex -i -o scanner.c scanner.l
+gcc -g -o scanner_test scanner_test.c scanner.c
+./scanner_test < $1
