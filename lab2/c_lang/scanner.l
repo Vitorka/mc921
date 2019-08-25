@@ -10,6 +10,8 @@
 %}
 [ \t\n]   ;
 
+^["/"]["/"].+[\n] ;
+
 <<EOF>> return(T_EOF);
 
 %{
@@ -49,10 +51,10 @@
 "%"        return(T_REMINDER);
 "("        return(T_OPEN_P);
 ")"        return(T_CLOSE_P);
-"{"        return(T_OPEN_B);
-"}"        return(T_CLOSE_B);
-"["        return(T_OPEN_K);
-"]"        return(T_CLOSE_K);
+"["        return(T_OPEN_B);
+"]"        return(T_CLOSE_B);
+"{"        return(T_OPEN_K);
+"}"        return(T_CLOSE_K);
 ":"        return(T_COLON);
 ";"        return(T_SEMI_COLON);
 "="        return(T_ASSIGN);
@@ -73,11 +75,11 @@
 /* identifiers, numbers and strings */
 %}
 
-[a-zA-Z][a-zA-Z0-9]*    return(T_ID);
-[0-9]+  return(T_NUM);
-[a-zA-Z0-9]*    return(T_STR);
+([a-zA-Z]+[a-zA-Z0-9"_"]*)|(["_"]+[a-zA-Z0-9]+)|(["_"]+[a-zA-Z0-9]+["_"]+)    return(T_ID);
+("0x"[a-fA-F0-9]+)|([0-9]+)|([0-9]+"."[0-9]*)|([0-9]*"."[0-9]+)|('[a-zA-Z0-9]')|('["\\"][0abfnrtv]') return(T_NUM);
+[\"].*[\"] return(T_STR);
 
-.   return(T_ERROR);
+([#])|([.]+[a-zA-Z0-9]+)|([0-9]+[a-zA-Z]+) return(T_ERROR);
 
 %%
 
