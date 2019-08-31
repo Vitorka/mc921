@@ -10,3 +10,5 @@ rm tmp_code_sed.c
 flex -i -o scanner.c scanner.l
 gcc -g -o scanner_test scanner_test.c scanner.c
 ./scanner_test < corrected.c > tokens.txt
+
+sed -E -n "/T_ID\>|T_STR\>|T_NUM\>/p" tokens.txt > selected.txt
