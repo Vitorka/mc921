@@ -9,4 +9,4 @@ rm tmp_code_sed.c
 
 flex -i -o scanner.c scanner.l
 gcc -g -o scanner_test scanner_test.c scanner.c
-./scanner_test < corrected.c > tolkens.txt
+./scanner_test < corrected.c > tokens.txt
