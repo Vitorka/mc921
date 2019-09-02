@@ -1,6 +1,8 @@
 %{
 /* header */
 #include "token.h"
+
+int lines = 1;
 %}
 
 %%
@@ -8,9 +10,12 @@
 %{
 /* blanks */
 %}
-[ \t\n]   ;
+[ \t]   ;
 
-["/"]["/"].+[\n] ;
+\n {lines++;}
+
+
+["/"]["/"].+[\n] {lines++;}
 
 <<EOF>> return(T_EOF);
 
