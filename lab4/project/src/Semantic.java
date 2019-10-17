@@ -4,9 +4,6 @@ import java.util.*;
 
 public class Semantic extends GrammarBaseVisitor<String> {
 
-    //Hashmap with all of local variables in a func
-    Map<String, String> exprFunc = new LinkedHashMap<String, String>();
-
     //Number of local variables used in a func
     int localID = 1;
 
@@ -50,28 +47,16 @@ public class Semantic extends GrammarBaseVisitor<String> {
     }
 
     @Override public String visitVar(GrammarParser.VarContext ctx) {
-        String lastVariable = visit(ctx.expr());
 
         globalVariables.put(ctx.ID().toString(), ctx.ID().toString() + "_initializer");
         System.out.println("@" + ctx.ID().toString() + " = global i32 0;");
         System.out.println("define void @" + ctx.ID().toString() + "_initializer" + "() {");
-        TreeMap<String, String> hashSorted = new TreeMap<>();
-        hashSorted.putAll(exprFunc);
-        Iterator funcs = hashSorted.entrySet().iterator();
-        while (funcs.hasNext()) {
-            Map.Entry element = (Map.Entry)funcs.next();
-            System.out.println("    " + element.getKey() + " = " + element.getValue());
-        }
+        String lastVariable = visit(ctx.expr());
 
-        //Expr is a number
-        if(exprFunc.isEmpty()) {
-            System.out.println("    " + "store i32 " + lastVariable + ", i32* @" + ctx.ID().toString());
-        } else {
-            System.out.println("    " + "store i32 %" + (localID - 1) + ", i32* @" + ctx.ID().toString());
-        }
+        System.out.println("    " + "store i32 " + lastVariable + ", i32* @" + ctx.ID().toString());
         System.out.println("    " + "ret void");
         System.out.println("}");
-        exprFunc = new LinkedHashMap<String, String>();
+
         localVariables = new ArrayList<String>();
         localID = 1;
 
@@ -89,28 +74,17 @@ public class Semantic extends GrammarBaseVisitor<String> {
         }
         params = params.substring(0, params.length() - 2);
 
+        //Print all operations inside a function
+        System.out.println("define i32 @" + ctx.ID().toString() + "(" + params + ") {");
+
         //Visit the expression of the function
         String lastVariable = visit(ctx.expr());
 
-        //Print all operations inside a function
-        TreeMap<String, String> hashSorted = new TreeMap<>();
-        hashSorted.putAll(exprFunc);
-        System.out.println("define i32 @" + ctx.ID().toString() + "(" + params + ") {");
-        Iterator funcs = hashSorted.entrySet().iterator();
-        while (funcs.hasNext()) {
-            Map.Entry element = (Map.Entry)funcs.next();
-            System.out.println("    " + element.getKey() + " = " + element.getValue());
-        }
-
-        //If there is only one element in expression
-        if(exprFunc.isEmpty()) {
-            System.out.println("    " + "ret i32 " + lastVariable);
-        } else {
-            System.out.println("    " + "ret i32 %" + (localID - 1));
-        }
+        System.out.println("    " + "ret i32 " + lastVariable);
         System.out.println("}");
-        exprFunc = new HashMap<String, String>();
+
         funcParams = new ArrayList<String>();
+        localVariables = new ArrayList<String>();
         localID = 1;
 
         return null;
@@ -120,51 +94,74 @@ public class Semantic extends GrammarBaseVisitor<String> {
         String expr = visit(ctx.expr());
         String prior = visit(ctx.prior());
 
-        //Expr and prior are local variables
-        if(localVariables.contains(expr) && localVariables.contains(prior)) {
-            exprFunc.put("%" + localID, "add i32 " + expr + ", " + prior);
+        //Expr is a local variable and prior is a local variable or number
+        if(localVariables.contains(expr) && (localVariables.contains(prior) || prior.matches("[0-9]+"))) {
+            System.out.println("    %" + localID + " = " + "add i32 " + expr + ", " + prior);
+            localVariables.add("%" + localID);
+        }
+        //Expr is a local variable or number and prior is a local variable
+        else if(localVariables.contains(prior) && (localVariables.contains(expr) || expr.matches("[0-9]+"))) {
+            System.out.println("    %" + localID + " = " + "add i32 " + expr + ", " + prior);
             localVariables.add("%" + localID);
         }
         //Expr is a local variable or number and prior is a global variable
         else if ((localVariables.contains(expr) || expr.matches("[0-9]+")) && globalVariables.containsKey(prior.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + prior.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "add i32 " + expr + ", " + "%" + (localID - 1));
+            System.out.println("    %" + localID + " = " + "add i32 " + expr + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
         //Expr is a global variable and prior is a local variable or number
         else if ((localVariables.contains(prior) || prior.matches("[0-9]+")) && globalVariables.containsKey(expr.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + expr.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + expr.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "add i32 " + "%" + (localID - 1) + ", " + prior);
+            System.out.println("    %" + localID + " = " + "add i32 " + "%" + (localID - 1) + ", " + prior);
             localVariables.add("%" + localID);
         }
         //Expr and Prior are global variables
         else if (globalVariables.containsKey(expr.substring(1)) && globalVariables.containsKey(prior.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + expr.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + expr.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "load i32, i32* @" + prior.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "add i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
+            System.out.println("    %" + localID + " = " + "add i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
-        //Expr is a function
-        else if(Character.compare(expr.charAt(0), '@') == 0) {
-            exprFunc.put("%" + localID, "call i32 " + expr);
+        //Expr is a local variable or number and prior is a function
+        else if((localVariables.contains(expr) || expr.matches("[0-9]+")) && Character.compare(prior.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + prior);
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "add i32 " + "%" + (localID - 1) + ", " + "%" + prior);
+            System.out.println("    %" + localID + " = " + "add i32 " + expr + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
-        //Prior is a function
-        else if(Character.compare(prior.charAt(0), '@') == 0) {
-            exprFunc.put("%" + localID, "call i32 " + prior);
+        //Expr is a global variable and prior is a function
+        else if(globalVariables.containsKey(expr.substring(1)) && Character.compare(prior.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + expr.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "add i32 " + "%" + expr + ", " + "%" + (localID - 1));
+            System.out.println("    %" + localID + " = " + "call i32 " + prior);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "add i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
+            localVariables.add("%" + localID);
+        }
+        //Expr is a function and prior is a local variable or number
+        else if((localVariables.contains(prior) || prior.matches("[0-9]+")) && Character.compare(expr.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + expr);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "add i32 " + "%" + (localID - 1) + ", " + prior);
+            localVariables.add("%" + localID);
+        }
+        //Expr is a function and prior is a global variable
+        else if(globalVariables.containsKey(prior.substring(1)) && Character.compare(expr.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + expr);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "add i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
         //Expr and prior are numbers
         else {
-            exprFunc.put("%" + localID, "add i32 " + expr + ", " + prior);
+            System.out.println("    %" + localID + " = " + "add i32 " + expr + ", " + prior);
             localVariables.add("%" + localID);
         }
         return "%" + localID++;
@@ -174,51 +171,74 @@ public class Semantic extends GrammarBaseVisitor<String> {
         String expr = visit(ctx.expr());
         String prior = visit(ctx.prior());
 
-        //Expr and prior are local variables
-        if(localVariables.contains(expr) && localVariables.contains(prior)) {
-            exprFunc.put("%" + localID, "sub i32 " + expr + ", " + prior);
+        //Expr is a local variable and prior is a local variable or number
+        if(localVariables.contains(expr) && (localVariables.contains(prior) || prior.matches("[0-9]+"))) {
+            System.out.println("    %" + localID + " = " + "sub i32 " + expr + ", " + prior);
+            localVariables.add("%" + localID);
+        }
+        //Expr is a local variable or number and prior is a local variable
+        else if(localVariables.contains(prior) && (localVariables.contains(expr) || expr.matches("[0-9]+"))) {
+            System.out.println("    %" + localID + " = " + "sub i32 " + expr + ", " + prior);
             localVariables.add("%" + localID);
         }
         //Expr is a local variable or number and prior is a global variable
         else if ((localVariables.contains(expr) || expr.matches("[0-9]+")) && globalVariables.containsKey(prior.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + prior.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "sub i32 " + expr + ", " + "%" + (localID - 1));
+            System.out.println("    %" + localID + " = " + "sub i32 " + expr + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
         //Expr is a global variable and prior is a local variable or number
         else if ((localVariables.contains(prior) || prior.matches("[0-9]+")) && globalVariables.containsKey(expr.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + expr.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + expr.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "sub i32 " + "%" + (localID - 1) + ", " + prior);
+            System.out.println("    %" + localID + " = " + "sub i32 " + "%" + (localID - 1) + ", " + prior);
             localVariables.add("%" + localID);
         }
         //Expr and Prior are global variables
         else if (globalVariables.containsKey(expr.substring(1)) && globalVariables.containsKey(prior.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + expr.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + expr.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "load i32, i32* @" + prior.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "sub i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
+            System.out.println("    %" + localID + " = " + "sub i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
-        //Expr is a function
-        else if(Character.compare(expr.charAt(0), '@') == 0) {
-            exprFunc.put("%" + localID, "call i32 " + expr);
+        //Expr is a local variable or number and prior is a function
+        else if((localVariables.contains(expr) || expr.matches("[0-9]+")) && Character.compare(prior.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + prior);
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "sub i32 " + "%" + (localID - 1) + ", " + "%" + prior);
+            System.out.println("    %" + localID + " = " + "sub i32 " + expr + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
-        //Prior is a function
-        else if(Character.compare(prior.charAt(0), '@') == 0) {
-            exprFunc.put("%" + localID, "call i32 " + prior);
+        //Expr is a global variable and prior is a function
+        else if(globalVariables.containsKey(expr.substring(1)) && Character.compare(prior.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + expr.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "sub i32 " + expr + ", " + "%" + (localID - 1));
+            System.out.println("    %" + localID + " = " + "call i32 " + prior);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "sub i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
+            localVariables.add("%" + localID);
+        }
+        //Expr is a function and prior is a local variable or number
+        else if((localVariables.contains(prior) || prior.matches("[0-9]+")) && Character.compare(expr.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + expr);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "sub i32 " + "%" + (localID - 1) + ", " + prior);
+            localVariables.add("%" + localID);
+        }
+        //Expr is a function and prior is a global variable
+        else if(globalVariables.containsKey(prior.substring(1)) && Character.compare(expr.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + expr);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "sub i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
         //Expr and prior are numbers
         else {
-            exprFunc.put("%" + localID, "sub i32 " + expr + ", " + prior);
+            System.out.println("    %" + localID + " = " + "sub i32 " + expr + ", " + prior);
             localVariables.add("%" + localID);
         }
         return "%" + localID++;
@@ -227,18 +247,25 @@ public class Semantic extends GrammarBaseVisitor<String> {
     @Override public String visitExprPrior(GrammarParser.ExprPriorContext ctx) {
         String prior = visit(ctx.prior());
 
-        //If prior is a local variable or a number
-        if(localVariables.contains(prior) || prior.matches("[0-9]+")) {
+        //If prior is a local variable
+        if(localVariables.contains(prior)) {
+            localVariables.add("%" + prior);
+            return prior;
+        }
+        //If prior is a number
+        if(prior.matches("[0-9]+")) {
             return prior;
         }
         //If prior is a global variable
         else if(globalVariables.containsKey(prior.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + prior.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
+            localVariables.add("%" + localID);
             return "%" + localID++;
         }
         //If prior is a function
         else {
-            exprFunc.put("%" + localID, "call i32 " + prior);
+            System.out.println("    %" + localID + " = " + "call i32 " + prior);
+            localVariables.add("%" + localID);
             return "%" + localID++;
         }
     }
@@ -247,47 +274,83 @@ public class Semantic extends GrammarBaseVisitor<String> {
         String prior = visit(ctx.prior());
         String terminal = visit(ctx.terminal());
 
-        //Prior and terminal are local variables
-        if(localVariables.contains(prior) && localVariables.contains(terminal)) {
-            exprFunc.put("%" + localID, "sdiv i32 " + prior + ", " + terminal);
+        //Prior is a local variable and terminal is a local variable or number
+        if(localVariables.contains(prior) && (localVariables.contains(terminal) || terminal.matches("[0-9]+"))) {
+            System.out.println("    %" + localID + " = " + "sdiv i32 " + prior + ", " + terminal);
+            localVariables.add("%" + localID);
+        }
+        //Prior is a local variable or number and terminal is a local variable
+        else if(localVariables.contains(terminal) && (localVariables.contains(prior) || prior.matches("[0-9]+"))) {
+            System.out.println("    %" + localID + " = " + "sdiv i32 " + prior + ", " + terminal);
             localVariables.add("%" + localID);
         }
         //Prior is a local variable or number and terminal is a global variable
         else if ((localVariables.contains(prior) || prior.matches("[0-9]+")) && globalVariables.containsKey(terminal.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + terminal.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + terminal.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "sdiv i32 " + prior + ", " + "%" + (localID - 1));
+            System.out.println("    %" + localID + " = " + "sdiv i32 " + prior + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
         //Prior is a global variable and terminal is a local variable or number
         else if ((localVariables.contains(terminal) || terminal.matches("[0-9]+")) && globalVariables.containsKey(prior.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + prior.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "sdiv i32 " + "%" + (localID - 1) + ", " + terminal);
+            System.out.println("    %" + localID + " = " + "sdiv i32 " + "%" + (localID - 1) + ", " + terminal);
             localVariables.add("%" + localID);
         }
         //Prior and terminal are global variables
         else if (globalVariables.containsKey(prior.substring(1)) && globalVariables.containsKey(terminal.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + prior.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "load i32, i32* @" + terminal.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + terminal.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "sdiv i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
+            System.out.println("    %" + localID + " = " + "sdiv i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
-        //Prior is a function
-        else if(Character.compare(prior.charAt(0), '@') == 0) {
-            exprFunc.put("%" + localID, "call i32 " + prior);
+        //Prior and terminal are functions
+        else if(Character.compare(prior.charAt(0), '@') == 0 && Character.compare(terminal.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + prior);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "call i32 " + terminal);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "sdiv i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
-        //Terminal is a function
-        else if(Character.compare(terminal.charAt(0), '@') == 0) {
-            exprFunc.put("%" + localID, "call i32 " + terminal);
+        //Prior is a local variable or number and terminal is a function
+        else if((localVariables.contains(prior) || prior.matches("[0-9]+")) && Character.compare(terminal.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + terminal);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "sdiv i32 " + prior + ", " + "%" + (localID - 1));
+            localVariables.add("%" + localID);
+        }
+        //Prior is a global variable and terminal is a function
+        else if(globalVariables.containsKey(prior.substring(1)) && Character.compare(terminal.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "call i32 " + terminal);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "sdiv i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
+            localVariables.add("%" + localID);
+        }
+        //Prior is a function and terminal is a local variable or number
+        else if((localVariables.contains(terminal) || terminal.matches("[0-9]+")) && Character.compare(prior.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + prior);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "sdiv i32 " + "%" + (localID - 1) + ", " + terminal);
+            localVariables.add("%" + localID);
+        }
+        //Prior is a function and terminal is a global variable
+        else if(globalVariables.containsKey(terminal.substring(1)) && Character.compare(prior.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + prior);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + terminal.substring(1));
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "sdiv i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
         //Prior and terminal are numbers
         else {
-            exprFunc.put("%" + localID, "sdiv i32 " + prior + ", " + terminal);
+            System.out.println("    %" + localID + " = " + "sdiv i32 " + prior + ", " + terminal);
             localVariables.add("%" + localID);
         }
         return "%" + localID++;
@@ -297,47 +360,83 @@ public class Semantic extends GrammarBaseVisitor<String> {
         String prior = visit(ctx.prior());
         String terminal = visit(ctx.terminal());
 
-        //Prior and terminal are local variables
-        if(localVariables.contains(prior) && localVariables.contains(terminal)) {
-            exprFunc.put("%" + localID, "mul i32 " + prior + ", " + terminal);
+        //Prior is a local variable and terminal is a local variable or number
+        if(localVariables.contains(prior) && (localVariables.contains(terminal) || terminal.matches("[0-9]+"))) {
+            System.out.println("    %" + localID + " = " + "mul i32 " + prior + ", " + terminal);
+            localVariables.add("%" + localID);
+        }
+        //Prior is a local variable or number and terminal is a local variable
+        else if(localVariables.contains(terminal) && (localVariables.contains(prior) || prior.matches("[0-9]+"))) {
+            System.out.println("    %" + localID + " = " + "mul i32 " + prior + ", " + terminal);
             localVariables.add("%" + localID);
         }
         //Prior is a local variable or number and terminal is a global variable
         else if ((localVariables.contains(prior) || prior.matches("[0-9]+")) && globalVariables.containsKey(terminal.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + terminal.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + terminal.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "mul i32 " + prior + ", " + "%" + (localID - 1));
+            System.out.println("    %" + localID + " = " + "mul i32 " + prior + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
         //Prior is a global variable and terminal is a local variable or number
         else if ((localVariables.contains(terminal) || terminal.matches("[0-9]+")) && globalVariables.containsKey(prior.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + prior.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "mul i32 " + "%" + (localID - 1) + ", " + terminal);
+            System.out.println("    %" + localID + " = " + "mul i32 " + "%" + (localID - 1) + ", " + terminal);
             localVariables.add("%" + localID);
         }
         //Prior and terminal are global variables
         else if (globalVariables.containsKey(prior.substring(1)) && globalVariables.containsKey(terminal.substring(1))) {
-            exprFunc.put("%" + localID, "load i32, i32* @" + prior.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "load i32, i32* @" + terminal.substring(1));
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + terminal.substring(1));
             localVariables.add("%" + localID++);
-            exprFunc.put("%" + localID, "mul i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
+            System.out.println("    %" + localID + " = " + "mul i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
-        //Prior is a function
-        else if(Character.compare(prior.charAt(0), '@') == 0) {
-            exprFunc.put("%" + localID, "call i32 " + prior);
+        //Prior and terminal are functions
+        else if(Character.compare(prior.charAt(0), '@') == 0 && Character.compare(terminal.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + prior);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "call i32 " + terminal);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "mul i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
-        //Terminal is a function
-        else if(Character.compare(terminal.charAt(0), '@') == 0) {
-            exprFunc.put("%" + localID, "call i32 " + terminal);
+        //Prior is a local variable or number and terminal is a function
+        else if((localVariables.contains(prior) || prior.matches("[0-9]+")) && Character.compare(terminal.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + terminal);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "mul i32 " + prior + ", " + "%" + (localID - 1));
+            localVariables.add("%" + localID);
+        }
+        //Prior is a global variable and terminal is a function
+        else if(globalVariables.containsKey(prior.substring(1)) && Character.compare(terminal.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + prior.substring(1));
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "call i32 " + terminal);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "mul i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
+            localVariables.add("%" + localID);
+        }
+        //Prior is a function and terminal is a local variable or number
+        else if((localVariables.contains(terminal) || terminal.matches("[0-9]+")) && Character.compare(prior.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + prior);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "mul i32 " + "%" + (localID - 1) + ", " + terminal);
+            localVariables.add("%" + localID);
+        }
+        //Prior is a function and terminal is a global variable
+        else if(globalVariables.containsKey(terminal.substring(1)) && Character.compare(prior.charAt(0), '@') == 0) {
+            System.out.println("    %" + localID + " = " + "call i32 " + prior);
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + terminal.substring(1));
+            localVariables.add("%" + localID++);
+            System.out.println("    %" + localID + " = " + "mul i32 " + "%" + (localID - 2) + ", " + "%" + (localID - 1));
             localVariables.add("%" + localID);
         }
         //Prior and terminal are numbers
         else {
-            exprFunc.put("%" + localID, "mul i32 " + prior + ", " + terminal);
+            System.out.println("    %" + localID + " = " + "mul i32 " + prior + ", " + terminal);
             localVariables.add("%" + localID);
         }
         return "%" + localID++;
@@ -390,7 +489,7 @@ public class Semantic extends GrammarBaseVisitor<String> {
         }
         //If the ID is a global variable
         else {
-            exprFunc.put("%" + localID, "load i32, i32* @" + ctx.ID().toString());
+            System.out.println("    %" + localID + " = " + "load i32, i32* @" + ctx.ID().toString());
             return "i32 %" + localID++;
         }
     }
