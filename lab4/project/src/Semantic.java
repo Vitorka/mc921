@@ -15,10 +15,12 @@ public class Semantic extends GrammarBaseVisitor<String> {
 
     @Override public String visitRootComponent(GrammarParser.RootComponentContext ctx) {
         visit(ctx.component());
+
         return null;
     }
 
     @Override public String visitComponentVar(GrammarParser.ComponentVarContext ctx) {
+        visit(ctx.var());
         return null;
     }
 
@@ -34,6 +36,21 @@ public class Semantic extends GrammarBaseVisitor<String> {
     }
 
     @Override public String visitVar(GrammarParser.VarContext ctx) {
+        String lastVariable = visit(ctx.expr());
+
+        System.out.println("@a = global i32 0;");
+        System.out.println("define void @" + ctx.ID().toString() + "_func" + "() {");
+        Iterator funcs = exprFunc.entrySet().iterator();
+        while (funcs.hasNext()) {
+            Map.Entry element = (Map.Entry)funcs.next();
+            System.out.println("    " + element.getKey() + " = " + element.getValue());
+        }
+        System.out.println("    " + "store i32 " + lastVariable + ", i32* @" + ctx.ID().toString());
+        System.out.println("    " + "ret void");
+        System.out.println("}");
+        exprFunc = new HashMap<String, String>();
+        localVariables = 1;
+
         return null;
     }
 
