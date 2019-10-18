@@ -14,19 +14,5 @@ lab2/c_lang/tokens.txt
 lab3/project/*
 lab3/summer/antlr-4.7.2-complete.jar
 
-lab4/project/.idea/*
-lab4/project/*.iml
-lab4/project/src/*.jar
-lab4/project/src/*.svg
-lab4/project/src/*.interp
-lab4/project/src/*.tokens
-lab4/project/src/*.class
-lab4/project/src/tests/*
+lab4/project/*
 
-lab4/project/src/GrammarBaseVisitor.java
-
-lab4/project/src/GrammarLexer.java
-
-lab4/project/src/GrammarParser.java
-
-lab4/project/src/GrammarVisitor.java
