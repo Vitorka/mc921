@@ -1,0 +1,19 @@
+I0:   store i32 10, i32* @a | I0:   store i32 10, i32* @a
+I1:   ret void | I1:   ret void
+I0:   store i32 5, i32* @b | I0:   store i32 5, i32* @b
+I1:   ret void | I1:   ret void
+I0:   %.0 = load i32, i32* @a | I3:   %.3 = add i32 %.0, %.2
+I1:   %.1 = load i32, i32* @b | I2:   %.2 = mul i32 %.1, 2
+I2:   %.2 = mul i32 %.1, 2 | I3:   %.3 = add i32 %.0, %.2
+I3:   %.3 = add i32 %.0, %.2 | I4:   %.4 = sdiv i32 %.3, %c
+I4:   %.4 = sdiv i32 %.3, %c | I5:   ret i32 %.4
+I5:   ret i32 %.4 | I5:   ret i32 %.4
+I0:   %.0 = call i32 @function(i32 10) | I1:   %.1 = sub i32 %.0, 1
+I1:   %.1 = sub i32 %.0, 1 | I2:   store i32 %.1, i32* @sm_main
+I2:   store i32 %.1, i32* @sm_main | I2:   store i32 %.1, i32* @sm_main
+I3:   ret void | I3:   ret void
+I0:   call void @.init.a() | I0:   call void @.init.a()
+I1:   call void @.init.b() | I1:   call void @.init.b()
+I2:   call void @.init.sm_main() | I2:   call void @.init.sm_main()
+I3:   ret void | I3:   ret void
+

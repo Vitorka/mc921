@@ -1,0 +1,7 @@
+I0:   ret i32 %x | I0:   ret i32 %x
+I0:   %.0 = call i32 @a(i32 10) | I1:   store i32 %.0, i32* @sm_main
+I1:   store i32 %.0, i32* @sm_main | I1:   store i32 %.0, i32* @sm_main
+I2:   ret void | I2:   ret void
+I0:   call void @.init.sm_main() | I0:   call void @.init.sm_main()
+I1:   ret void | I1:   ret void
+

@@ -1,0 +1,15 @@
+I0:   %.0 = add i32 30, 12 | I5:   %.5 = mul i32 %.0, %.4
+I1:   %.1 = sub i32 15, 2 | I2:   %.2 = sdiv i32 %.1, 3
+I2:   %.2 = sdiv i32 %.1, 3 | I3:   %.3 = add i32 %.2, 7
+I3:   %.3 = add i32 %.2, 7 | I4:   %.4 = sub i32 %.3, 2
+I4:   %.4 = sub i32 %.3, 2 | I5:   %.5 = mul i32 %.0, %.4
+I5:   %.5 = mul i32 %.0, %.4 | I8:   %.8 = sub i32 %.5, %.7
+I6:   %.6 = sub i32 0, 1 | I7:   %.7 = mul i32 77, %.6
+I7:   %.7 = mul i32 77, %.6 | I8:   %.8 = sub i32 %.5, %.7
+I8:   %.8 = sub i32 %.5, %.7 | I9:   %.9 = sub i32 %.8, 42
+I9:   %.9 = sub i32 %.8, 42 | I10:   store i32 %.9, i32* @sm_main
+I10:   store i32 %.9, i32* @sm_main | I10:   store i32 %.9, i32* @sm_main
+I11:   ret void | I11:   ret void
+I0:   call void @.init.sm_main() | I0:   call void @.init.sm_main()
+I1:   ret void | I1:   ret void
+

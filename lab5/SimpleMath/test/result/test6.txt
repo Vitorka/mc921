@@ -1,0 +1,48 @@
+I0:   store i32 1, i32* @a | I0:   store i32 1, i32* @a
+I1:   ret void | I1:   ret void
+I0:   %.0 = load i32, i32* @a | I3:   %.3 = add i32 %.0, %.2
+I1:   %.1 = load i32, i32* @a | I2:   %.2 = mul i32 2, %.1
+I2:   %.2 = mul i32 2, %.1 | I3:   %.3 = add i32 %.0, %.2
+I3:   %.3 = add i32 %.0, %.2 | I4:   %.4 = add i32 %.3, 3
+I4:   %.4 = add i32 %.3, 3 | I5:   %.5 = sub i32 %.4, 2
+I5:   %.5 = sub i32 %.4, 2 | I6:   store i32 %.5, i32* @b
+I6:   store i32 %.5, i32* @b | I6:   store i32 %.5, i32* @b
+I7:   ret void | I7:   ret void
+I0:   %.0 = load i32, i32* @b | I1:   %.1 = mul i32 %.0, 8
+I1:   %.1 = mul i32 %.0, 8 | I3:   %.3 = sdiv i32 %.1, %.2
+I2:   %.2 = add i32 3, %a | I3:   %.3 = sdiv i32 %.1, %.2
+I3:   %.3 = sdiv i32 %.1, %.2 | I4:   ret i32 %.3
+I4:   ret i32 %.3 | I4:   ret i32 %.3
+I0:   %.0 = load i32, i32* @a | I1:   %.1 = mul i32 %b, %.0
+I1:   %.1 = mul i32 %b, %.0 | I4:   %.4 = add i32 %.1, %.3
+I2:   %.2 = sub i32 %b, 2 | I3:   %.3 = mul i32 %b, %.2
+I3:   %.3 = mul i32 %b, %.2 | I4:   %.4 = add i32 %.1, %.3
+I4:   %.4 = add i32 %.1, %.3 | I5:   ret i32 %.4
+I5:   ret i32 %.4 | I5:   ret i32 %.4
+I0:   %.0 = call i32 @f1(i32 2) | I3:   %.3 = add i32 %.0, %.2
+I1:   %.1 = load i32, i32* @a | I2:   %.2 = call i32 @f2(i32 %.1)
+I2:   %.2 = call i32 @f2(i32 %.1) | I3:   %.3 = add i32 %.0, %.2
+I3:   %.3 = add i32 %.0, %.2 | I4:   %.4 = sub i32 %.3, 15
+I4:   %.4 = sub i32 %.3, 15 | I5:   %.5 = sdiv i32 %.4, 2
+I5:   %.5 = sdiv i32 %.4, 2 | I6:   store i32 %.5, i32* @c
+I6:   store i32 %.5, i32* @c | I6:   store i32 %.5, i32* @c
+I7:   ret void | I7:   ret void
+I0:   %.0 = load i32, i32* @c | I1:   %.1 = sub i32 %.0, %b
+I1:   %.1 = sub i32 %.0, %b | I2:   %.2 = mul i32 %a, %.1
+I2:   %.2 = mul i32 %a, %.1 | I3:   ret i32 %.2
+I3:   ret i32 %.2 | I3:   ret i32 %.2
+I0:   %.0 = sub i32 0, 10 | I1:   store i32 %.0, i32* @d
+I1:   store i32 %.0, i32* @d | I1:   store i32 %.0, i32* @d
+I2:   ret void | I2:   ret void
+I0:   %.0 = load i32, i32* @c | I2:   %.2 = call i32 @f3(i32 %.0, i32 %.1)
+I1:   %.1 = load i32, i32* @d | I2:   %.2 = call i32 @f3(i32 %.0, i32 %.1)
+I2:   %.2 = call i32 @f3(i32 %.0, i32 %.1) | I3:   store i32 %.2, i32* @sm_main
+I3:   store i32 %.2, i32* @sm_main | I3:   store i32 %.2, i32* @sm_main
+I4:   ret void | I4:   ret void
+I0:   call void @.init.a() | I0:   call void @.init.a()
+I1:   call void @.init.b() | I1:   call void @.init.b()
+I2:   call void @.init.c() | I2:   call void @.init.c()
+I3:   call void @.init.d() | I3:   call void @.init.d()
+I4:   call void @.init.sm_main() | I4:   call void @.init.sm_main()
+I5:   ret void | I5:   ret void
+

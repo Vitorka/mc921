@@ -1,0 +1,5 @@
+I0:   store i32 5, i32* @sm_main | I0:   store i32 5, i32* @sm_main
+I1:   ret void | I1:   ret void
+I0:   call void @.init.sm_main() | I0:   call void @.init.sm_main()
+I1:   ret void | I1:   ret void
+
